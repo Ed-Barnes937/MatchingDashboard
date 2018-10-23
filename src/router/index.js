@@ -16,7 +16,7 @@ const router = new Router({
 		path:'/matching',
 		name:'Event Matching',
 		component: EventMatching,
-		icon: 'fa-exchange',
+		icon: 'fa-exchange-alt',
 		label: 'Event Matching',
 		render: true
 	}, {
