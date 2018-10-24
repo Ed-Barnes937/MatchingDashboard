@@ -45,7 +45,12 @@ const store = new Vuex.Store({
                 date: '20/10/2018',
                 operator: "bet365"
             }
-        ]
+        ],
+        catenaList: [
+                'Manchester United vs Chelsea',
+                'Southampton vs Liverpool',
+                'Newcastle vs Stoke'
+            ]
     },
     mutations: {
 
@@ -58,7 +63,11 @@ const store = new Vuex.Store({
             return state.participants
         },
         eventList: (state) => (operator) => {
-            return state.eventList.filter(event => event.operator === operator)
+            if (operator) return state.eventList.filter(event => event.operator === operator)
+            else return state.eventList
+        },
+        catenaList: (state) => () => {
+            return state.catenaList
         }
     }
 })
