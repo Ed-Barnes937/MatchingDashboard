@@ -21,13 +21,14 @@
                 </v-btn-toggle>
             </v-flex>
             <v-flex xs12>
-                <v-data-table :headers="headers" :items="eventList">
+                <v-data-table :headers="headers" :items="eventList" must-sort :pagination.sync="defaultSort">
                     <template slot="items" slot-scope="props">
-                        <td text-xs-left>{{props.item.operatorName}}</td>
-                        <td text-xs-left><v-autocomplete :items="catenaList" label="select catena event" dense clearable></v-autocomplete></td>
-                        <td text-xs-left>{{props.item.status}}</td>
-                        <td><v-btn color="info">update</v-btn></td>
-                        <td text-xs-left>{{props.item.date}}</td>
+                        <td class="text-xs-left">{{props.item.operatorName}}</td>
+                        <td class="text-xs-left"><v-autocomplete :items="catenaList" label="select catena event" dense clearable></v-autocomplete></td>
+                        <td class="text-xs-left" :style="confidenceStyling(props.item.confidence)"><b>{{props.item.confidence}}%</b></td>
+                        <td class="text-xs-left">{{props.item.status}}</td>
+                        <td class="text-xs-left"><v-btn color="info">update</v-btn></td>
+                        <td class="text-xs-left">{{props.item.date}}</td>
                     </template>
                 </v-data-table>
             </v-flex>
@@ -49,22 +50,27 @@
                     value: 'ladbrokesName'
                 },{
                     text: 'Catena Event',
-                    sortable: true,
+                    sortable: false,
                     value: 'catenaName'
                 },{
-                    text: 'Status',
+                    text: 'Confidence',
+                    sortable: true,
+                    value: 'confidence'
+                },{
+                    text: 'Manual Match',
                     sortable: true,
                     value: 'status'
                 },{
                     text: 'Update',
-                    sortable: true,
+                    sortable: false,
                     value: "Update"
                 },{
                     text: 'Date',
                     sortable: true,
                     value: 'date'
                 }],
-                operator: "ladbrokes"
+                operator: "ladbrokes",
+                defaultSort: {'sortBy': 'confidence', 'descending': true}
             }
         },
         computed: {
@@ -73,6 +79,12 @@
             },
             catenaList() {
                 return this.$store.getters.catenaList()
+            }
+        },
+        methods: {
+            confidenceStyling(conf) {
+                let textColor = (conf >= 95 ? 'green' : (conf >= 70 ? '#d1ad10' : 'red'))
+                return {color: textColor}
             }
         },
         created() {

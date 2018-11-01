@@ -17,30 +17,35 @@ const store = new Vuex.Store({
             {
                 operatorName: 'Man Utd vs Chelsea',
                 catenaName: '',
+                confidence: 58,
                 status: false,
                 date: '20/10/2018',
                 operator: "ladbrokes"
             },{
                 operatorName: 'Southampton vs Liverpool',
                 catenaName: '',
+                confidence: 75,
                 status: false,
                 date: '20/10/2018',
                 operator: "ladbrokes"
             },{
                 operatorName: 'Man United vs Chelsea',
                 catenaName: '',
+                confidence: 90,
                 status: false,
                 date: '20/10/2018',
                 operator: "bet365"
             },{
                 operatorName: 'Newcastle vs Stoke',
                 catenaName: '',
+                confidence: 95,
                 status: false,
                 date: '20/10/2018',
                 operator: "ladbrokes"
             },{
                 operatorName: 'Liverpool vs Southampton',
                 catenaName: '',
+                confidence: 95,
                 status: false,
                 date: '20/10/2018',
                 operator: "bet365"
