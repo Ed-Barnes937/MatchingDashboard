@@ -13,49 +13,61 @@ const store = new Vuex.Store({
             {name: "Newcastle"},
             {name: "Stoke"}
         ],
-        eventList: [
+        catenaList: [
             {
-                operatorName: 'Man Utd vs Chelsea',
-                catenaName: '',
-                confidence: 58,
-                status: false,
+                catenaName: 'Manchester United vs Chelsea',
+                catenaID: 0,
+                matchedEvents: [{
+                    id: 0,
+                    confidence: 58,
+                    status: false,
+                    operator: "Ladbrokes"
+                }],
                 date: '20/10/2018',
-                operator: "ladbrokes"
             },{
-                operatorName: 'Southampton vs Liverpool',
-                catenaName: '',
-                confidence: 75,
-                status: false,
-                date: '20/10/2018',
-                operator: "ladbrokes"
+                catenaName: 'Southampton vs Liverpool',
+                catenaID: 1,
+                matchedEvents: [{
+                    id: 1,
+                    confidence: 75,
+                    status: false,
+                    operator: "Ladbrokes",
+                }],
+                date: '20/10/2018'
             },{
-                operatorName: 'Man United vs Chelsea',
-                catenaName: '',
-                confidence: 90,
-                status: false,
-                date: '20/10/2018',
-                operator: "bet365"
-            },{
-                operatorName: 'Newcastle vs Stoke',
-                catenaName: '',
-                confidence: 95,
-                status: false,
-                date: '20/10/2018',
-                operator: "ladbrokes"
-            },{
-                operatorName: 'Liverpool vs Southampton',
-                catenaName: '',
-                confidence: 95,
-                status: false,
-                date: '20/10/2018',
-                operator: "bet365"
+                catenaName: 'Newcastle vs Stoke',
+                catenaID: 2,
+                matchedEvents: [{
+                    id: 2,
+                    confidence: 95,
+                    status: false,
+                    operator: "Ladbrokes"
+                }],
+                date: '20/10/2018'
             }
         ],
-        catenaList: [
-                'Manchester United vs Chelsea',
-                'Southampton vs Liverpool',
-                'Newcastle vs Stoke'
-            ]
+        LadbrokesList: [
+            {
+            operatorName: 'Man Utd vs Chelsea',
+            operatorID: 0
+        },{
+            operatorName: 'Soton vs Liverpool',
+            operatorID: 1
+        }, {
+            operatorName: 'N\'castle vs Stoke',
+            operatorID: 2
+        }],
+        Bet365List: [
+            {
+            operatorName: 'Manchester Utd vs Chelsea',
+            operatorID: 0
+        },{
+            operatorName: 'Soton vs Liverpool',
+            operatorID: 1
+        }, {
+            operatorName: 'Newcastle vs Stoke',
+            operatorID: 2
+        }]
     },
     mutations: {
 
@@ -67,12 +79,14 @@ const store = new Vuex.Store({
         teamList: (state) => () => {
             return state.participants
         },
-        eventList: (state) => (operator) => {
-            if (operator) return state.eventList.filter(event => event.operator === operator)
-            else return state.eventList
+        operatorList: (state) => (operator) => {
+            return state[operator+"List"] || [{operatorName: "No Data"}]
         },
         catenaList: (state) => () => {
             return state.catenaList
+        },
+        operatorName: (state) => (operator, id) => {
+            return state[operator+"List"].filter(obj => obj.operatorID === id)[0].operatorName
         }
     }
 })
