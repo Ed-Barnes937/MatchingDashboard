@@ -21,20 +21,20 @@
                 </v-btn-toggle>
             </v-flex>
             <v-flex xs12>
-                <v-data-table :headers="headers" :items="matchedList" must-sort :pagination.sync="defaultSort">
+                <v-data-table :headers="headers" :items="matchList" must-sort :pagination.sync="defaultSort">
                     <template slot="items" slot-scope="props">
                         <td class="text-xs-left">{{props.item.catenaName}}</td>
                         <td class="text-xs-left">
                             <v-autocomplete :items="operatorList"
                                             item-text="operatorName"
                                             item-value="operatorID"
-                                            label="select catena event"
+                                            label="select operator event"
                                             v-model="props.item.operator"
                                             dense clearable return-object/>
                         </td>
                         <td class="text-xs-left" :style="confidenceStyling(props.item.confidence)"><b>{{props.item.confidence}}%</b></td>
-                        <td class="text-xs-left">{{props.item.status}}</td>
-                        <td class="text-xs-left"><v-btn color="info">update</v-btn></td>
+                        <td class="text-xs-left"><v-icon>{{props.item.status ? 'fa-check' : 'fa-times'}}</v-icon></td>
+                        <td class="text-xs-left"><v-btn color="info" @click="match(props.item.catenaID)">Confirm</v-btn></td>
                         <td class="text-xs-left">{{props.item.date}}</td>
                     </template>
                 </v-data-table>
@@ -52,13 +52,13 @@
             return {
                 headers: [
                     {
-                    text: 'Operator Event',
-                    sortable: true,
-                    value: 'operatorName'
-                },{
                     text: 'Catena Event',
-                    sortable: false,
+                    sortable: true,
                     value: 'catenaName'
+                },{
+                    text: 'Operator Event',
+                    sortable: false,
+                    value: 'operatorName'
                 },{
                     text: 'Confidence',
                     sortable: true,
@@ -68,16 +68,18 @@
                     sortable: true,
                     value: 'status'
                 },{
-                    text: 'Update',
+                    text: '',
                     sortable: false,
-                    value: "Update"
+                    value: "Confirm"
                 },{
                     text: 'Date',
                     sortable: true,
                     value: 'date'
                 }],
                 operator: "Ladbrokes",
-                defaultSort: {'sortBy': 'confidence', 'descending': true}
+                defaultSort: {'sortBy': 'confidence', 'descending': true},
+                matchList: [],
+                tempData: []
             }
         },
         computed: {
@@ -87,7 +89,8 @@
             catenaList() {
                 return this.$store.getters.catenaList()
             },
-            matchedList() {
+        },
+        mounted() {
                 let list = this.catenaList.map(event => (
                     {
                         catenaName: event.catenaName,
@@ -101,8 +104,7 @@
                         date: event.date,
                     }
                 ))
-                return list
-            }
+                this.matchList = list
         },
         methods: {
             confidenceStyling(conf) {
@@ -116,18 +118,33 @@
                 let id = event.filter(obj => obj.operator === this.operator).id
                 return this.operatorList.map(obj => obj.id === id).operatorName
             },
-            test() {
-                console.log("test")
-                return "test"
+            updateConfidence(id){
+                let catenaEvent = this.matchList.filter(obj => obj.catenaID === id)[0]
+                catenaEvent.confidence = 100
+                catenaEvent.status = true
+
+            },
+            match(id){
+                this.updateConfidence(id)
             }
-
-
         },
         created() {
+            let me = this
             let home = false;
+
+            let token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ik5qY3hPRE5CUVVFMU56RkJNakl3TWtOQk16WTJSRFV4UVVSRU5qTkJRalkyUVVRNU9ESTRSQSJ9.eyJodHRwczovL3N0Zy5jYXRlbmEubWVkaWEiOnsiYXV0aG9yaXphdGlvbiI6eyJwZXJtaXNzaW9ucyI6WyJyZWFkOmxhbmd1YWdlcyIsInJlYWQ6Y2F0ZWdvcmllcyIsInJlYWQ6Y2F0ZWdvcnlfdHlwZXMiLCJyZWFkOmNvdW50cmllcyIsInJlYWQ6Y3VycmVuY2llcyIsInJlYWQ6cGF5bWVudF9tZXRob2RzIiwiKjoqIl19LCJ1c2VyIjp7Im5hbWUiOiJFZHdhcmQgQmFybmVzIiwiZW1haWwiOiJlZHdhcmQuYmFybmVzQGNhdGVuYW1lZGlhLmNvbSIsInVzZXJfaWQiOiJnb29nbGUtb2F1dGgyfDEwNDA3ODQ3NjkzODQ0NTExNTg5NCJ9fSwiaXNzIjoiaHR0cHM6Ly9jYXRlbmFtZWRpYS1zdGFnaW5nLmV1LmF1dGgwLmNvbS8iLCJzdWIiOiJnb29nbGUtb2F1dGgyfDEwNDA3ODQ3NjkzODQ0NTExNTg5NCIsImF1ZCI6WyJodHRwczovL2NhdGVuYW1lZGlhLXN0YWdpbmcuZXUuYXV0aDAuY29tL2FwaS92Mi8iLCJodHRwczovL2NhdGVuYW1lZGlhLXN0YWdpbmcuZXUuYXV0aDAuY29tL3VzZXJpbmZvIl0sImlhdCI6MTU0MjI3NjY2NSwiZXhwIjoxNTQyMjgzODY1LCJhenAiOiJRVDVoODdQMjdZSXJkTVdjU0t3MEdyYzhQOUZnaEwwVCIsInNjb3BlIjoib3BlbmlkIHByb2ZpbGUgZW1haWwgcmVhZDpjdXJyZW50X3VzZXIifQ.w62OlZQw1WHPae2CwweLs6TfowcXiZ0ZLRWL13PXF5yFZlRN7KC3wwC0ppwcNwKjeYSGsASViRdIN0aTs5FHI5LBAdk64fgYejWe09suElg1pTvDz8tP6ln9XJGqf45NqM5jkIi1oudvD8af-8pUq8jL6YolJHC6S3IV7r33wR11NaxbVmp_EnJfKnYp9pEvSEWVbARVCpP44MdC8KmOY2lrAo7l-R3YH-XxN-aM_O-1yOuIPO9HsNowWKqCW0uQ7BIbHBjkLPSWGfI9eVTEVCbUJnkeEYMSDQ-sX_ZASAZqE38X5aduSSv9ovsqLdePOtoF5hu_089g5Ed6skxDBg"
+            const instance = axios.create({
+                headers: {'Authorization': 'Bearer '+token}
+            })
             if (!home) {
-                axios.get("http://sports-events-ms-stg.catena.media/events")
-                    .then(response => console.log(response))
+                instance.get("https://ms-proxy.catena.media/stg/sports-events/events")
+                    .then(response => {return response.data.data.items})
+                    .then(data => me.$store.commit('setCatenaList',data))
+                instance.get("https://ms-proxy.catena.media/stg/ladbrokes/events?sport=football")
+                    .then(response => {return response.data.data.items})
+                    .then(data => me.$store.commit('setLadbrokesList', (data[0].classes.class.types.type.filter(obj => {
+                        return obj.typeName === 'English'
+                    }))))
             }
         }
     }

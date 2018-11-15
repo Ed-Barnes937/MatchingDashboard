@@ -70,7 +70,30 @@ const store = new Vuex.Store({
         }]
     },
     mutations: {
+        setLadbrokesList(state, payload){
+            let tempList = payload[0].subtypes.subtype.filter(obj => {
+                return obj.subTypeName === 'Premier League'
+            })
+            tempList = tempList[0].events.event.filter(obj => {
+                return obj.eventSort === 'MTCH'
+            })
+            console.log(tempList)
+            tempList = tempList.map(obj => {
+                return {
+                    operatorName: obj.eventName,
+                    operatorID: obj.eventKey
+                }
+            })
+            console.log(tempList)
 
+        },
+        setCatenaList(state, payload){
+            let idList = []
+            payload.filter(obj => {
+                return obj.sports_type === 'football'
+            }).forEach(event => idList.push(event._id))
+            console.log(idList)
+        }
     },
     actions: {
 
