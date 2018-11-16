@@ -5,94 +5,111 @@ Vue.use(Vuex);
 
 const store = new Vuex.Store({
     state: {
-        participants: [
-            {name: "Manchester United"},
-            {name: "Chelsea"},
-            {name: "Southampton"},
-            {name: "Liverpool"},
-            {name: "Newcastle"},
-            {name: "Stoke"}
-        ],
+        loaded: false,
         catenaList: [
-            {
-                catenaName: 'Manchester United vs Chelsea',
-                catenaID: 0,
-                matchedEvents: [{
-                    id: 0,
-                    confidence: 58,
-                    status: false,
-                    operator: "Ladbrokes"
-                }],
-                date: '20/10/2018',
-            },{
-                catenaName: 'Southampton vs Liverpool',
-                catenaID: 1,
-                matchedEvents: [{
-                    id: 1,
-                    confidence: 75,
-                    status: false,
-                    operator: "Ladbrokes",
-                }],
-                date: '20/10/2018'
-            },{
-                catenaName: 'Newcastle vs Stoke',
-                catenaID: 2,
-                matchedEvents: [{
-                    id: 2,
-                    confidence: 95,
-                    status: false,
-                    operator: "Ladbrokes"
-                }],
-                date: '20/10/2018'
-            }
+
         ],
-        LadbrokesList: [
-            {
-            operatorName: 'Man Utd vs Chelsea',
-            operatorID: 0
-        },{
-            operatorName: 'Soton vs Liverpool',
-            operatorID: 1
-        }, {
-            operatorName: 'N\'castle vs Stoke',
-            operatorID: 2
-        }],
+        BAMList: [
+            // {
+            //     event_id: "faaaaaaaaaaabbbbbbbbbbb4",
+            //     matched_events: [{
+            //         operator_event_id: 0,
+            //         confidence: 58,
+            //         status: false,
+            //         operator_name: "ladbrokes"
+            //     }],
+            // },{
+            //     event_id: "faaaaaaaaaaabbbbbbbbbbb3",
+            //     matched_events: [{
+            //         operator_event_id: 1,
+            //         confidence: 75,
+            //         status: false,
+            //         operator_name: "ladbrokes",
+            //     }],
+            // },{
+            //     event_id: "faaaaaaaaaaabbbbbbbbbbb1",
+            //     matched_events: [{
+            //         operator_event_id: 2,
+            //         confidence: 95,
+            //         status: false,
+            //         operator_name: "ladbrokes"
+            //     }],
+            // }
+        ],
+        ladbrokesList: [
+        //     {
+        //     operatorName: 'Man Utd vs Chelsea',
+        //     operatorID: 0,
+        //     confidence: 69
+        // },{
+        //     operatorName: 'Soton vs Liverpool',
+        //     operatorID: 1
+        // }, {
+        //     operatorName: 'N\'castle vs Stoke',
+        //     operatorID: 2
+        // }
+        ],
         Bet365List: [
             {
-            operatorName: 'Manchester Utd vs Chelsea',
-            operatorID: 0
-        },{
-            operatorName: 'Soton vs Liverpool',
-            operatorID: 1
-        }, {
-            operatorName: 'Newcastle vs Stoke',
-            operatorID: 2
-        }]
+                operatorName: 'Manchester Utd vs Chelsea',
+                operatorID: 0
+            },
+            {
+                operatorName: 'Soton vs Liverpool',
+                operatorID: 1
+            },
+            {
+                operatorName: 'Newcastle vs Stoke',
+                operatorID: 2
+            }
+        ]
     },
     mutations: {
         setLadbrokesList(state, payload){
+            state.loaded = false
             let tempList = payload[0].subtypes.subtype.filter(obj => {
                 return obj.subTypeName === 'Premier League'
             })
             tempList = tempList[0].events.event.filter(obj => {
                 return obj.eventSort === 'MTCH'
             })
-            console.log(tempList)
             tempList = tempList.map(obj => {
                 return {
-                    operatorName: obj.eventName,
-                    operatorID: obj.eventKey
+                    operator_event_name: obj.eventName,
+                    operator_event_id: obj.eventKey,
+                    operator_name: 'ladbrokes'
                 }
             })
-            console.log(tempList)
-
+            state.ladbrokesList = tempList
+            state.loaded = true;
         },
+
         setCatenaList(state, payload){
             let idList = []
-            payload.filter(obj => {
+            idList = payload.filter(obj => {
                 return obj.sports_type === 'football'
-            }).forEach(event => idList.push(event._id))
-            console.log(idList)
+            }).map(event => {
+                return {
+                    catenaName: event.name,
+                    catenaID: event._id,
+                    catenaDate: event.datetime
+                }
+            })
+            state.catenaList = idList
+        },
+
+        setBamList(state, payload){
+            let tempList = payload
+            tempList.forEach(obj => {
+                obj.matched_events.forEach(op => {
+                    op.confidence = op.confidence || 0
+                })
+            })
+            state.BAMList = tempList
+        },
+
+        setLoad(state, payload){
+            state.loaded = payload
         }
     },
     actions: {
@@ -103,13 +120,19 @@ const store = new Vuex.Store({
             return state.participants
         },
         operatorList: (state) => (operator) => {
-            return state[operator+"List"] || [{operatorName: "No Data"}]
+            return state[operator.toLowerCase()+"List"] || [{operatorName: "No Data"}]
         },
         catenaList: (state) => () => {
             return state.catenaList
         },
         operatorName: (state) => (operator, id) => {
             return state[operator+"List"].filter(obj => obj.operatorID === id)[0].operatorName
+        },
+        BAMList: (state) => () => {
+            return state.BAMList
+        },
+        loaded: (state) => () => {
+            return state.loaded
         }
     }
 })
