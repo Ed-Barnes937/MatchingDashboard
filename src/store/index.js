@@ -67,6 +67,12 @@ const store = new Vuex.Store({
     mutations: {
         setLadbrokesList(state, payload){
             state.loaded = false
+            let ladList =[{
+                operator_event_name: "No match",
+                operator_event_id: 0,
+                operator_name: 'ladbrokes'
+            }]
+
             let tempList = payload[0].subtypes.subtype.filter(obj => {
                 return obj.subTypeName === 'Premier League'
             })
@@ -80,7 +86,8 @@ const store = new Vuex.Store({
                     operator_name: 'ladbrokes'
                 }
             })
-            state.ladbrokesList = tempList
+            ladList.push(...tempList)
+            state.ladbrokesList = ladList
             state.loaded = true;
         },
 
@@ -102,7 +109,7 @@ const store = new Vuex.Store({
             let tempList = payload
             tempList.forEach(obj => {
                 obj.matched_events.forEach(op => {
-                    op.confidence = op.confidence || 0
+                    op.matched_confidence = op.matched_confidence || 0
                 })
             })
             state.BAMList = tempList

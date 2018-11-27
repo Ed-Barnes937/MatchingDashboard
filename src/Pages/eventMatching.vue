@@ -32,9 +32,9 @@
                                             v-model="props.item.operator"
                                             dense clearable return-object/>
                         </td>
-                        <td class="text-xs-left" :style="confidenceStyling(props.item.confidence*100)"><b>{{props.item.confidence*100 || 0}}%</b></td>
-                        <td class="text-xs-left"><v-icon>{{props.item.confidence == 1 ? 'fa-check' : 'fa-times'}}</v-icon></td>
-                        <td class="text-xs-left"><v-btn color="info" @click="match(props.item.id)">Confirm</v-btn></td>
+                        <td class="text-xs-left" :style="confidenceStyling(props.item.operator.matched_confidence*100)"><b>{{props.item.operator.matched_confidence*100 || 0}}%</b></td>
+                        <td class="text-xs-left"><v-icon>{{props.item.operator.matched_confidence == 1 ? 'fa-check' : 'fa-times'}}</v-icon></td>
+                        <td class="text-xs-left"><v-btn color="info" @click="match(props.item)">Confirm</v-btn></td>
                         <td class="text-xs-left">{{props.item.date}}</td>
                     </template>
                 </v-data-table>
@@ -53,9 +53,6 @@
 
 <script>
     import axios from 'axios'
-    // import loadingComponent from '../Components/loadingComponent'
-    // import errorComponent from '../Components/errorComponent'
-    // const matchingTable = import('../Components/matchingTable')
 
     export default {
         name: "eventMatching",
@@ -81,7 +78,7 @@
                 },{
                     text: 'Confidence',
                     sortable: true,
-                    value: 'confidence'
+                    value: 'matched_confidence'
                 },{
                     text: 'Manual Match',
                     sortable: true,
@@ -95,8 +92,9 @@
                     sortable: true,
                     value: 'date'
                 }],
-                operator: "Ladbrokes",
-                defaultSort: {'sortBy': 'confidence', 'descending': true},
+                operator: "ladbrokes",
+
+                defaultSort: {'sortBy': 'matched_confidence', 'descending': true},
                 matchList: [],
                 canDraw :false
             }
@@ -119,20 +117,20 @@
         watch: {
             loaded(val) {
                 if (val) {
-                    let list = this.BAMList.map(BEvent => {
-                        return {
-                            name: this.matchedCatEvent(BEvent.event_id).catenaName,
-                            id: BEvent.event_id,
-                            operator: {
-                                operator_event_id: parseInt(this.BamMatchedEvents(BEvent).operator_event_id),
-                                operator_event_name: this.matchedLadbrokesEvent(this.BamMatchedEvents(BEvent).operator_event_id),
-                                operator_name: this.operator
-                            },
-                            confidence: BEvent.matched_events.filter(obj => obj.operator_name.toLowerCase() === this.operator.toLowerCase())[0].confidence || 0,
-                            date: this.matchedCatEvent(BEvent.event_id).catenaDate.substring(0, 10)
-                        }
+                    let list = []
+                    this.catenaList.forEach(CEvent => {
+                        let bamEvent = this.matchedBamEvent(CEvent.catenaID)
+                        list.push( {
+                            name: CEvent.catenaName,
+                            id: CEvent.catenaID,
+                            date: CEvent.catenaDate.substring(0,10),
+                            operator: bamEvent.operator,
+                            MS_id: bamEvent._id
+                        })
                     })
+                    console.log(list)
                     this.matchList = list
+
                 }
                 this.canDraw = true;
             }
@@ -142,29 +140,58 @@
                 let textColor = (conf >= 95 ? 'green' : (conf >= 70 ? '#d1ad10' : 'red'))
                 return {color: textColor}
             },
-            matchedCatEvent(id) {
-                if (this.catenaList) {
-                    return this.catenaList.filter(obj => {
-                        return obj.catenaID === id
-                    })[0]
+            matchedBamEvent(id){
+                let me = this
+                let BamEvent = this.BAMList.find(obj => {
+                    return obj.event_id === id
+                })
+                let matchedOpEv = BamEvent.matched_events.find(obj => {
+                    return obj.operator_name.toLowerCase() === me.operator.toLowerCase()
+                })
+                let OpEvent
+                if (matchedOpEv) {
+                    OpEvent = this.operatorList.find(obj => {
+                        return obj.operator_event_id.toString() === matchedOpEv.operator_event_id.toString()
+                    })
+                    if (OpEvent) OpEvent.push(matchedOpEv.matched_confidence)
+                    else {
+                        OpEvent = {
+                            operator_event_id: "-1",
+                            operator_name: this.operator,
+                            operator_event_name: "",
+                            matched_confidence: 0
+                        }
+                    }
                 }
-            },
-            matchedLadbrokesEvent(id){
-                if (id) {
-                    let returnVarr = this.operatorList.filter(obj => obj.operator_event_id.toString() === id.toString())[0]
-                    return Object.is(returnVarr, undefined) ? "" : returnVarr.operator_event_name
+                console.log(OpEvent)
+                return {
+                    _id: BamEvent._id,
+                    operator: OpEvent
                 }
-            },
-            BamMatchedEvents(eventList){
-                return eventList.matched_events.filter(obj => obj.operator_name.toLowerCase() === this.operator.toLowerCase())[0]
             },
             updateConfidence(id){
                 let tempEvent = this.matchList.filter(obj => { return obj.id === id})[0]
-                tempEvent.operator.confidence = 1
+                tempEvent.operator.matched_confidence = 1
                 this.$forceUpdate();
             },
-            match(id){
-                this.updateConfidence(id)
+            match(event){
+                console.log(event)
+                this.updateConfidence(event.id)
+                let payload = {
+                    event_ID: event.id,
+                    matched_events: [{
+                        operator_name: event.operator.operator_name,
+                        operator_event_id: event.operator.operator_event_id,
+                        matched_confidence: event.operator.matched_confidence
+                    }]
+                }
+                console.log(payload)
+                let token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ik5qY3hPRE5CUVVFMU56RkJNakl3TWtOQk16WTJSRFV4UVVSRU5qTkJRalkyUVVRNU9ESTRSQSJ9.eyJodHRwczovL3N0Zy5jYXRlbmEubWVkaWEiOnsiYXV0aG9yaXphdGlvbiI6eyJwZXJtaXNzaW9ucyI6WyJyZWFkOmxhbmd1YWdlcyIsInJlYWQ6Y2F0ZWdvcmllcyIsInJlYWQ6Y2F0ZWdvcnlfdHlwZXMiLCJyZWFkOmNvdW50cmllcyIsInJlYWQ6Y3VycmVuY2llcyIsInJlYWQ6cGF5bWVudF9tZXRob2RzIiwiKjoqIl19LCJ1c2VyIjp7Im5hbWUiOiJFZHdhcmQgQmFybmVzIiwiZW1haWwiOiJlZHdhcmQuYmFybmVzQGNhdGVuYW1lZGlhLmNvbSIsInVzZXJfaWQiOiJnb29nbGUtb2F1dGgyfDEwNDA3ODQ3NjkzODQ0NTExNTg5NCJ9fSwiaXNzIjoiaHR0cHM6Ly9jYXRlbmFtZWRpYS1zdGFnaW5nLmV1LmF1dGgwLmNvbS8iLCJzdWIiOiJnb29nbGUtb2F1dGgyfDEwNDA3ODQ3NjkzODQ0NTExNTg5NCIsImF1ZCI6WyJodHRwczovL2NhdGVuYW1lZGlhLXN0YWdpbmcuZXUuYXV0aDAuY29tL2FwaS92Mi8iLCJodHRwczovL2NhdGVuYW1lZGlhLXN0YWdpbmcuZXUuYXV0aDAuY29tL3VzZXJpbmZvIl0sImlhdCI6MTU0MjM3Mjg0NCwiZXhwIjoxNTQyMzgwMDQ0LCJhenAiOiJRVDVoODdQMjdZSXJkTVdjU0t3MEdyYzhQOUZnaEwwVCIsInNjb3BlIjoib3BlbmlkIHByb2ZpbGUgZW1haWwgcmVhZDpjdXJyZW50X3VzZXIifQ.vhHe6l3MR37qr3FABoBToRbDDBxH9HhDZpmE9MLiMTHMwgvwHW1Ij3I3smawt0Au7Emy_uMC58QKZT08YQIKKsZoZzjxcLubqI4YLty1jqlvpE-x6XRygxZBreg4d2ZjXrFs3uQU1cIT3CtHYGRz3uk_mjmhSwiU2Sgnn3GfcyL8sZcJH41_o3kxAoR29hT5iXrIW1WD84WUuo1ONZfY32d-JzmwIiZDuUHKZvCbaEwLrss8n9J0a62DD76Yg66LTaKI_4KZBk4uKpmeoXfXUUTrUw9FbrS0CcU2RvXG2uEJLpI0Q3zXo7j62jlslJCFesqHhMecZmpKOR64BRbfRw"
+                const instance = axios.create({
+                    baseURL: "http://dev.catena.media:63480/",
+                    headers: {'authorization': 'Bearer '+token}
+                })
+                instance.put("/sports-events/events/"+event.MS_id, payload)
             }
         },
         created() {
